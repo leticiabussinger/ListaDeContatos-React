@@ -1,0 +1,221 @@
+import React from 'react';
+import {
+  ButtonClear,
+  ButtonSave,
+  ButtonsContainer,
+  Contacts,
+  Container,
+  ContainerList,
+  FormList,
+  MessageError,
+  TitleContactList,
+} from './styled';
+import Input from '../../components/Input/Input';
+import Checkbox from '../../components/Input/Checkbox';
+import Contact from '../../components/Contact/Contact';
+import { GlobalStyleContactList } from '../../global/globalStyle';
+import Accordion from 'react-bootstrap/Accordion';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import { ContainerAccordion } from '../../components/Contact/styled';
+
+const ContactList = () => {
+  const [id, setId] = React.useState(1);
+  const [nome, setNome] = React.useState('');
+  const [telefone, setTelefone] = React.useState('');
+  const [telefoneFormatado, setTelefoneFormatado] = React.useState('');
+  const [whatsapp, setWhatsapp] = React.useState(false);
+  const [observacoes, setObservacoes] = React.useState('');
+  const [contacts, setContacts] = React.useState([]);
+  const [editContactAtualId, setEditContactAtualId] = React.useState(0);
+  const [errorSave, setErrorSave] = React.useState(false);
+
+  const saveContact = (e) => {
+    e.preventDefault();
+    let objIndex = -1;
+    const newArr = [...contacts];
+
+    if (editContactAtualId != 0) {
+      objIndex = newArr.findIndex((c) => c.id == editContactAtualId);
+    }
+
+    if (
+      nome != '' &&
+      telefone != '' &&
+      telefone.length == 11 &&
+      editContactAtualId == 0
+    ) {
+      saveNormal(e);
+      setErrorSave(false);
+    } else if (
+      nome != '' &&
+      telefone != '' &&
+      editContactAtualId != 0 &&
+      objIndex != -1
+    ) {
+      saveEdit(e, objIndex, newArr);
+      setErrorSave(false);
+    } else {
+      setErrorSave(true);
+    }
+  };
+
+  const formatPhoneNumber = (value) => {
+    const numericValue = value.replace(/\D/g, '');
+
+    const limitedValue = numericValue.slice(0, 11);
+
+    let formattedValue = '';
+    for (let i = 0; i < limitedValue.length; i++) {
+      if (i === 0) {
+        formattedValue += `(${limitedValue[i]}`;
+      } else if (i === 2) {
+        formattedValue += `) ${limitedValue[i]}`;
+      } else if (i === 7) {
+        formattedValue += `-${limitedValue[i]}`;
+      } else {
+        formattedValue += limitedValue[i];
+      }
+    }
+
+    return formattedValue;
+  };
+
+  const handleChange = (event) => {
+    const inputValue = event.target.value;
+    const formattedValue = formatPhoneNumber(inputValue);
+
+    setTelefone(formattedValue.replace(/\D/g, ''));
+    setTelefoneFormatado(formattedValue);
+  };
+
+  const saveEdit = (e, objIndex, newArr) => {
+    console.log('saveDiferente');
+    newArr[objIndex].id = editContactAtualId;
+    newArr[objIndex].nome = nome;
+    newArr[objIndex].telefone = telefone;
+    newArr[objIndex].whatsapp = whatsapp;
+    newArr[objIndex].observacoes = observacoes;
+    setContacts(() => newArr);
+    limparForm(e);
+  };
+
+  const saveNormal = (e) => {
+    setContacts((c) => [...c, { id, nome, telefone, whatsapp, observacoes }]);
+    setId((id) => id + 1);
+    limparForm(e);
+    console.log('saveNormal');
+  };
+
+  const limparForm = (e) => {
+    e.preventDefault();
+    setNome('');
+    setTelefone('');
+    setWhatsapp(false);
+    setObservacoes('');
+    setEditContactAtualId(0);
+    setErrorSave(false);
+    setTelefoneFormatado('');
+  };
+
+  const deleteContact = (id, event) => {
+    setContacts(contacts.filter((c) => c.id != id));
+    if (id == editContactAtualId) {
+      limparForm(event);
+    }
+  };
+  const editContact = (id, nome, telefone, whatsapp, observacoes) => {
+    setNome(nome);
+    setTelefone(telefone);
+    setWhatsapp(whatsapp);
+    setObservacoes(observacoes);
+    setEditContactAtualId(id);
+    const formattedValue = formatPhoneNumber(telefone);
+    setTelefoneFormatado(formattedValue);
+  };
+
+  return (
+    <Container>
+      <ContainerList>
+        <TitleContactList>Lista de Contatos</TitleContactList>
+        <GlobalStyleContactList />
+        <FormList>
+          {nome == '' && errorSave ? (
+            <Input
+              id="nome"
+              label="Nome Completo"
+              value={nome}
+              erro={errorSave}
+              onChange={(e) => setNome(e.target.value)}
+            />
+          ) : (
+            <Input
+              id="nome"
+              label="Nome Completo"
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+            />
+          )}
+          {telefone.length != 11 && errorSave ? (
+            <Input
+              id="telefone"
+              label="Telefone"
+              value={telefoneFormatado}
+              erro={errorSave}
+              maxLength={15}
+              placeholder="(xx) xxxxx-xxxx"
+              onChange={(e) => handleChange(e)}
+            />
+          ) : (
+            <Input
+              id="telefone"
+              label="Telefone"
+              value={telefoneFormatado}
+              maxLength={15}
+              placeholder="(xx) xxxxx-xxxx"
+              onChange={(e) => handleChange(e)}
+            />
+          )}
+          <Input
+            id="observacoes"
+            label="Observações (Opcional)"
+            value={observacoes}
+            onChange={(e) => setObservacoes(e.target.value)}
+          />
+          <Checkbox
+            id="whatsapp"
+            label="Possui Whatsapp?"
+            checked={whatsapp}
+            onChange={() => setWhatsapp(!whatsapp)}
+          />
+          {errorSave && (
+            <MessageError>
+              Por favor, preencha todos os campos obrigatórios.
+            </MessageError>
+          )}
+          <ButtonsContainer>
+            <ButtonClear onClick={limparForm}>Limpar</ButtonClear>
+            <ButtonSave onClick={saveContact}>Salvar</ButtonSave>
+          </ButtonsContainer>
+        </FormList>
+        <Contacts>
+          {contacts.length == 0 ? <h3>Nenhum Contato</h3> : <h3>Contatos</h3>}
+          <ContainerAccordion>
+            <Accordion>
+              {contacts.map((c) => (
+                <Contact
+                  key={c.id}
+                  formatarTelefone={formatPhoneNumber}
+                  deleteContact={deleteContact}
+                  editContact={editContact}
+                  contact={c}
+                />
+              ))}
+            </Accordion>
+          </ContainerAccordion>
+        </Contacts>
+      </ContainerList>
+    </Container>
+  );
+};
+
+export default ContactList;
