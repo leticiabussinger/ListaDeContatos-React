@@ -17,9 +17,9 @@ import { GlobalStyleContactList } from '../../global/globalStyle';
 import Accordion from 'react-bootstrap/Accordion';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { ContainerAccordion } from '../../components/Contact/styled';
+import { api } from '../../api/api';
 
 const ContactList = () => {
-  const [id, setId] = React.useState(1);
   const [nome, setNome] = React.useState('');
   const [telefone, setTelefone] = React.useState('');
   const [telefoneFormatado, setTelefoneFormatado] = React.useState('');
@@ -28,6 +28,17 @@ const ContactList = () => {
   const [contacts, setContacts] = React.useState([]);
   const [editContactAtualId, setEditContactAtualId] = React.useState(0);
   const [errorSave, setErrorSave] = React.useState(false);
+
+  const getContatos = () => {
+    console.log('Fez');
+    api.get('/contatos').then((r) => {
+      setContacts(r.data);
+    });
+  };
+
+  React.useEffect(() => {
+    getContatos();
+  }, []);
 
   const saveContact = (e) => {
     e.preventDefault();
@@ -46,14 +57,20 @@ const ContactList = () => {
     ) {
       saveNormal(e);
       setErrorSave(false);
+      setTimeout(() => {
+        getContatos();
+      }, 300);
     } else if (
       nome != '' &&
       telefone != '' &&
       editContactAtualId != 0 &&
       objIndex != -1
     ) {
-      saveEdit(e, objIndex, newArr);
+      saveEdit(e);
       setErrorSave(false);
+      setTimeout(() => {
+        getContatos();
+      }, 500);
     } else {
       setErrorSave(true);
     }
@@ -88,22 +105,24 @@ const ContactList = () => {
     setTelefoneFormatado(formattedValue);
   };
 
-  const saveEdit = (e, objIndex, newArr) => {
-    console.log('saveDiferente');
-    newArr[objIndex].id = editContactAtualId;
-    newArr[objIndex].nome = nome;
-    newArr[objIndex].telefone = telefone;
-    newArr[objIndex].whatsapp = whatsapp;
-    newArr[objIndex].observacoes = observacoes;
-    setContacts(() => newArr);
+  const saveEdit = (e) => {
+    api.put(`/contatos/${editContactAtualId}`, {
+      nome,
+      telefone,
+      whatsapp,
+      observacoes,
+    });
     limparForm(e);
   };
 
   const saveNormal = (e) => {
-    setContacts((c) => [...c, { id, nome, telefone, whatsapp, observacoes }]);
-    setId((id) => id + 1);
+    api.post('/contatos', {
+      nome,
+      telefone,
+      whatsapp,
+      observacoes,
+    });
     limparForm(e);
-    console.log('saveNormal');
   };
 
   const limparForm = (e) => {
@@ -118,7 +137,10 @@ const ContactList = () => {
   };
 
   const deleteContact = (id, event) => {
-    setContacts(contacts.filter((c) => c.id != id));
+    api.delete(`/contatos/${id}`);
+    setTimeout(() => {
+      getContatos();
+    }, 300);
     if (id == editContactAtualId) {
       limparForm(event);
     }
@@ -189,7 +211,7 @@ const ContactList = () => {
           />
           {errorSave && (
             <MessageError>
-              Por favor, preencha todos os campos obrigatórios.
+              Por favor, preencha todos os campos obrigatórios corretamente.
             </MessageError>
           )}
           <ButtonsContainer>

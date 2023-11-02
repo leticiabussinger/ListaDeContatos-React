@@ -64,6 +64,7 @@ const textExpand = keyframes`
 
 export const MessageError = styled.p`
   color: 'white';
+  margin-top: 5px;
   text-align: end;
   font-size: 1.2rem;
   font-weight: 500;
